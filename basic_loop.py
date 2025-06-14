@@ -50,6 +50,7 @@ while not board.is_game_over():
 
     # Engine replies
     fen = board.fen()
+    print(f"FEN:{fen}")
     reply_move, eval_info = get_best_move(fen)
     board.push(chess.Move.from_uci(reply_move))
 

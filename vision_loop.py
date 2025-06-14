@@ -4,7 +4,7 @@ import os
 import time
 import chess
 from stockfish import Stockfish
-from elevenlabs_tts import speak_text
+from archive.elevenlabs_tts import speak_text
 from inference_sdk import InferenceHTTPClient
 from dotenv import load_dotenv
 import datetime

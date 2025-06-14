@@ -1,7 +1,7 @@
 # basic_loop.py
 import chess
 from stockfish import Stockfish
-from elevenlabs_tts import speak_text
+from archive.elevenlabs_tts import speak_text
 
 # You: Replace with your actual Stockfish binary path if needed
 STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"

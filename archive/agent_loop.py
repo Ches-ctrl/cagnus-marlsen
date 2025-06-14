@@ -2,6 +2,7 @@
 import chess
 from stockfish import Stockfish
 from elevenlabs_tts import speak_text
+from langgraph_agent import generate_trash_talk_with_agent
 
 # You: Replace with your actual Stockfish binary path if needed
 STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"
@@ -15,18 +16,6 @@ def get_best_move(fen: str) -> tuple[str, dict]:
     move = engine.get_best_move_time(100)  # 100 ms thinking time
     eval_ = engine.get_evaluation()
     return move, eval_
-
-def generate_trash_talk(score: int) -> str:
-    if score > 200:
-        return "You're cooked. Might as well resign."
-    elif score > 50:
-        return "This is not looking good for you, pal."
-    elif score > -50:
-        return "Neck and neck. Let's dance."
-    elif score > -200:
-        return "You sure you know how the horse moves?"
-    else:
-        return "Are you playing blindfolded?"
 
 # Main loop
 print("🧠 Cagnus Marlsen is ready. Make your move.")
@@ -56,7 +45,7 @@ while not board.is_game_over():
 
     # Banter
     score = eval_info.get("value", 0)
-    smack = generate_trash_talk(score)
+    smack = generate_trash_talk_with_agent(fen, score)
     print(f"🤖 My move: {reply_move} | Eval: {eval_info}")
     print(f"🗯️  {smack}")
     speak_text(smack)

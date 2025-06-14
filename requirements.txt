@@ -6,3 +6,5 @@ opencv-python
 roboflow
 inference
 numpy
+langgraph
+openai

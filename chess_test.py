@@ -19,11 +19,37 @@ CLIENT = InferenceHTTPClient(
 # Estimated pixel coordinates for the four corners of the board in chess_board_2.jpg
 # Order: a8, h8, h1, a1
 BOARD_CORNERS = [
-    (1540, 3600),   # a8 (top-left)
-    (4560, 3500),  # h8 (top-right)
-    (5000, 80), # h1 (bottom-right)
-    (710, 410),  # a1 (bottom-left)
+    (1640, 860),   # a8 (top-left)
+    (4430, 950), # h8 (top-right)
+    (4730, 3990),  # h1 (bottom-right)
+    (950, 3710),  # a1 (bottom-left)
 ]
+
+# Visualize board corners and grid
+img_path = "assets/chess_board_2.jpg"
+img = cv2.imread(img_path)
+
+# Draw corners
+for (x, y) in BOARD_CORNERS:
+    cv2.circle(img, (int(x), int(y)), 20, (0, 0, 255), -1)
+
+# Draw grid
+for i in range(9):
+    # Vertical lines: interpolate between a8 (top-left) and a1 (bottom-left), and h8 (top-right) and h1 (bottom-right)
+    x1 = BOARD_CORNERS[0][0] + (BOARD_CORNERS[3][0] - BOARD_CORNERS[0][0]) * i / 8
+    y1 = BOARD_CORNERS[0][1] + (BOARD_CORNERS[3][1] - BOARD_CORNERS[0][1]) * i / 8
+    x2 = BOARD_CORNERS[1][0] + (BOARD_CORNERS[2][0] - BOARD_CORNERS[1][0]) * i / 8
+    y2 = BOARD_CORNERS[1][1] + (BOARD_CORNERS[2][1] - BOARD_CORNERS[1][1]) * i / 8
+    cv2.line(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 5)
+
+    # Horizontal lines: interpolate between a8 (top-left) and h8 (top-right), and a1 (bottom-left) and h1 (bottom-right)
+    x3 = BOARD_CORNERS[0][0] + (BOARD_CORNERS[1][0] - BOARD_CORNERS[0][0]) * i / 8
+    y3 = BOARD_CORNERS[0][1] + (BOARD_CORNERS[1][1] - BOARD_CORNERS[0][1]) * i / 8
+    x4 = BOARD_CORNERS[3][0] + (BOARD_CORNERS[2][0] - BOARD_CORNERS[3][0]) * i / 8
+    y4 = BOARD_CORNERS[3][1] + (BOARD_CORNERS[2][1] - BOARD_CORNERS[3][1]) * i / 8
+    cv2.line(img, (int(x3), int(y3)), (int(x4), int(y4)), (255, 0, 0), 5)
+
+cv2.imwrite("assets/chess_board_2_annotated.jpg", img)
 
 # Helper: map (x, y) to board square
 def get_square_from_pixel(x, y, corners=BOARD_CORNERS):

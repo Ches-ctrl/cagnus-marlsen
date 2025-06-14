@@ -142,8 +142,8 @@ def detect_board_fen_from_frame(frame, corners):
     return fen_full
 
 def save_annotated_screenshot(frame, corners, move_label):
-    # Draw corners
     annotated = frame.copy()
+    # Draw corners
     for i, corner in enumerate(corners):
         cv2.circle(annotated, tuple(map(int, corner)), 8, (0, 255, 0), -1)
         cv2.putText(annotated, str(i+1), (int(corner[0])+10, int(corner[1])),
@@ -153,9 +153,32 @@ def save_annotated_screenshot(frame, corners, move_label):
         pt1 = tuple(map(int, corners[i]))
         pt2 = tuple(map(int, corners[(i+1)%4]))
         cv2.line(annotated, pt1, pt2, (255, 0, 0), 2)
+    # Perspective transform for grid overlay
+    src = np.array(corners, dtype=np.float32)
+    dst = np.array([
+        [0, 0], [8*100, 0], [8*100, 8*100], [0, 8*100]
+    ], dtype=np.float32)  # 800x800 px board for grid
+    M = cv2.getPerspectiveTransform(src, dst)
+    Minv = cv2.getPerspectiveTransform(dst, src)
+    # Draw grid lines in rectified space, then map back
+    grid_size = 8
+    board_px = 8*100
+    for i in range(grid_size+1):
+        # Vertical lines
+        pt1 = np.array([[i*100, 0]], dtype=np.float32)
+        pt2 = np.array([[i*100, board_px]], dtype=np.float32)
+        pts = np.array([pt1, pt2]).reshape(-1,1,2)
+        pts = cv2.perspectiveTransform(pts, Minv)
+        cv2.line(annotated, tuple(pts[0][0].astype(int)), tuple(pts[1][0].astype(int)), (0,255,0), 2)
+        # Horizontal lines
+        pt3 = np.array([[0, i*100]], dtype=np.float32)
+        pt4 = np.array([[board_px, i*100]], dtype=np.float32)
+        pts2 = np.array([pt3, pt4]).reshape(-1,1,2)
+        pts2 = cv2.perspectiveTransform(pts2, Minv)
+        cv2.line(annotated, tuple(pts2[0][0].astype(int)), tuple(pts2[1][0].astype(int)), (255,0,0), 2)
     # Add timestamp and move label
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    label = f"{move_label} {timestamp}"
+    label = f"{move_label}-{timestamp}"
     cv2.putText(annotated, label, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,255), 3)
     # Ensure screenshots folder exists
     os.makedirs('screenshots', exist_ok=True)
@@ -216,6 +239,8 @@ def main():
         return
     fen = detect_board_fen_from_frame(frame, corners)
     print(f"Initial FEN: {fen}")
+    # Save annotated screenshot with grid at initiation
+    save_annotated_screenshot(frame, corners, "init")
     board = chess.Board(fen)
     print(board)
     last_fen = fen

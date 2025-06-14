@@ -1,6 +1,7 @@
 # basic_loop.py
 import chess
 from stockfish import Stockfish
+from elevenlabs_tts import speak_text
 
 # You: Replace with your actual Stockfish binary path if needed
 STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"
@@ -57,5 +58,6 @@ while not board.is_game_over():
     smack = generate_trash_talk(score)
     print(f"🤖 My move: {reply_move} | Eval: {eval_info}")
     print(f"🗯️  {smack}")
+    speak_text(smack)
 
 print("\n🏁 Game Over:", board.result())

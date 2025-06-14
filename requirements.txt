@@ -3,4 +3,5 @@ python-chess
 elevenlabs
 python-dotenv
 opencv-python
-numpy
+roboflow
+inference

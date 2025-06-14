@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 import datetime
 import chess.pgn
 
+# STATUS:
+# - Vision mode is working, but the board detection is not perfect.
+# - Misidentifies pawns as bishops and doesn't see all the pieces.
+
 # Load environment variables for Roboflow
 load_dotenv()
 
@@ -73,17 +77,18 @@ def manual_corner_selection(cap):
             return np.array(selected['corners'], dtype=np.float32)
 
 def get_square_from_pixel(x, y, corners):
+    # Use the same perspective transform as the grid overlay
     src = np.array(corners, dtype=np.float32)
     dst = np.array([
-        [0, 0], [7, 0], [7, 7], [0, 7]
+        [0, 0], [800, 0], [800, 800], [0, 800]
     ], dtype=np.float32)
     M = cv2.getPerspectiveTransform(src, dst)
-    px = np.array([[x, y]], dtype=np.float32)
-    px = np.array([px])
+    px = np.array([[[x, y]]], dtype=np.float32)  # shape (1, 1, 2)
     board_xy = cv2.perspectiveTransform(px, M)[0][0]
-    file = int(round(board_xy[0]))
-    rank = int(round(board_xy[1]))
+    file = int(board_xy[0] // 100)
+    rank = int(board_xy[1] // 100)
     if 0 <= file <= 7 and 0 <= rank <= 7:
+        # Convert to chess notation: file (a-h), rank (8-1)
         return chr(ord('a') + file) + str(8 - rank)
     return None
 
@@ -134,9 +139,12 @@ def detect_board_fen_from_frame(frame, corners):
         x = pred['x']
         y = pred['y']
         class_name = pred['class']
+        print(f"Detected: {class_name} at ({x:.1f}, {y:.1f})")
         square = get_square_from_pixel(x, y, corners)
         if square and class_name in PIECE_TO_FEN:
+            print(f"Adding {class_name} to {square}")
             piece_map[square] = PIECE_TO_FEN[class_name]
+    print("Piece map (square: piece):", piece_map)
     fen = build_fen(piece_map)
     fen_full = f"{fen} w KQkq - 0 1"
     return fen_full

@@ -1,2 +1,4 @@
 stockfish
 python-chess
+elevenlabs
+python-dotenv

@@ -97,28 +97,141 @@ class MoveTrackingFENDetector:
         return full_fen
     
     def detect_board_corners(self, frame):
-        """Detect chess board corners using contour detection."""
+        """Detect chess board corners using multiple methods."""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (7, 7), 0)
         
-        # Try adaptive threshold
-        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                     cv2.THRESH_BINARY, 11, 2)
+        # Method 1: Enhanced adaptive threshold
+        corners = self._detect_corners_adaptive(gray)
+        if corners is not None:
+            return corners
         
-        # Find contours
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Method 2: Canny edge detection
+        corners = self._detect_corners_canny(gray)
+        if corners is not None:
+            return corners
         
-        # Find the largest rectangular contour
-        for contour in sorted(contours, key=cv2.contourArea, reverse=True):
-            area = cv2.contourArea(contour)
-            if self.min_contour_area < area < self.max_contour_area:
-                epsilon = 0.02 * cv2.arcLength(contour, True)
-                approx = cv2.approxPolyDP(contour, epsilon, True)
-                
-                if len(approx) == 4:
-                    return self.order_points(approx.reshape(4, 2))
+        # Method 3: Different blur and threshold combinations
+        corners = self._detect_corners_multi_threshold(gray)
+        if corners is not None:
+            return corners
         
         return None
+    
+    def _detect_corners_adaptive(self, gray):
+        """Original adaptive threshold method with improvements."""
+        # Try multiple blur levels
+        for blur_size in [(5, 5), (7, 7), (9, 9), (3, 3)]:
+            blurred = cv2.GaussianBlur(gray, blur_size, 0)
+            
+            # Try different adaptive threshold parameters
+            for block_size in [11, 15, 19, 7]:
+                for c_value in [2, 4, 6, 8]:
+                    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                                 cv2.THRESH_BINARY, block_size, c_value)
+                    
+                    corners = self._find_rectangular_contour(thresh)
+                    if corners is not None:
+                        return corners
+        return None
+    
+    def _detect_corners_canny(self, gray):
+        """Canny edge detection method."""
+        # Try different Canny parameters
+        for low_thresh in [50, 100, 150]:
+            for high_thresh in [150, 200, 250]:
+                if high_thresh <= low_thresh:
+                    continue
+                
+                blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+                edges = cv2.Canny(blurred, low_thresh, high_thresh)
+                
+                # Dilate edges to close gaps
+                kernel = np.ones((3, 3), np.uint8)
+                edges = cv2.dilate(edges, kernel, iterations=1)
+                
+                corners = self._find_rectangular_contour(edges)
+                if corners is not None:
+                    return corners
+        return None
+    
+    def _detect_corners_multi_threshold(self, gray):
+        """Multiple threshold methods."""
+        # Try Otsu's thresholding
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        corners = self._find_rectangular_contour(thresh)
+        if corners is not None:
+            return corners
+        
+        # Try simple thresholding with different values
+        for thresh_val in [100, 120, 140, 160, 180]:
+            _, thresh = cv2.threshold(gray, thresh_val, 255, cv2.THRESH_BINARY)
+            corners = self._find_rectangular_contour(thresh)
+            if corners is not None:
+                return corners
+        
+        return None
+    
+    def _find_rectangular_contour(self, thresh):
+        """Find the best rectangular contour from a thresholded image."""
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Dynamic area limits based on image size
+        image_area = thresh.shape[0] * thresh.shape[1]
+        min_area = image_area * 0.05  # At least 5% of image
+        max_area = image_area * 0.8   # At most 80% of image
+        
+        # Find rectangular contours
+        candidates = []
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if min_area < area < max_area:
+                # Try different epsilon values for polygon approximation
+                for epsilon_factor in [0.01, 0.02, 0.03, 0.015, 0.025]:
+                    epsilon = epsilon_factor * cv2.arcLength(contour, True)
+                    approx = cv2.approxPolyDP(contour, epsilon, True)
+                    
+                    if len(approx) == 4:
+                        # Check if it's roughly rectangular
+                        if self._is_roughly_rectangular(approx):
+                            candidates.append((area, approx.reshape(4, 2)))
+        
+        # Return the largest valid candidate
+        if candidates:
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            return self.order_points(candidates[0][1])
+        
+        return None
+    
+    def _is_roughly_rectangular(self, approx):
+        """Check if a 4-point contour is roughly rectangular."""
+        points = approx.reshape(4, 2)
+        
+        # Calculate all 4 side lengths
+        sides = []
+        for i in range(4):
+            p1 = points[i]
+            p2 = points[(i + 1) % 4]
+            length = np.linalg.norm(p2 - p1)
+            sides.append(length)
+        
+        # Check if opposite sides are roughly equal (within 20% tolerance)
+        sides.sort()
+        if sides[0] == 0 or sides[2] == 0:
+            return False
+        
+        ratio1 = sides[1] / sides[0]  # Short sides ratio
+        ratio2 = sides[3] / sides[2]  # Long sides ratio
+        
+        # Both ratios should be close to 1, and short/long ratio should be reasonable
+        if ratio1 > 1.2 or ratio2 > 1.2:
+            return False
+        
+        # Check that it's not too skewed (aspect ratio check)
+        aspect_ratio = sides[3] / sides[0]
+        if aspect_ratio > 3 or aspect_ratio < 0.3:
+            return False
+        
+        return True
     
     def order_points(self, pts):
         """Order points in top-left, top-right, bottom-right, bottom-left order."""
@@ -293,26 +406,52 @@ class MoveTrackingFENDetector:
         return self.board_array_to_fen(np.array(board_state))
     
     def calibrate_quick(self):
-        """Quick calibration process."""
-        print("=== QUICK CALIBRATION ===")
+        """Quick calibration process with enhanced feedback."""
+        print("=== ENHANCED CALIBRATION ===")
         print("Position your board in starting position and press SPACE when ready...")
-        print("Or press 'm' for manual corner selection, 'q' to quit")
+        print("Press 'd' to show detection debug info, 'm' for manual selection, 'q' to quit")
+        
+        show_debug = False
+        detection_attempts = 0
         
         while True:
             ret, frame = self.cap.read()
             if not ret:
                 continue
             
-            cv2.putText(frame, "Press SPACE when board is ready", 
-                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.putText(frame, "Press 'm' for manual selection", 
-                       (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+            # Try automatic detection continuously for visual feedback
+            corners = self.detect_board_corners(frame)
+            detection_attempts += 1
+            
+            # Visual feedback
+            if corners is not None:
+                # Draw detected corners
+                corners_int = corners.astype(int)
+                cv2.polylines(frame, [corners_int], True, (0, 255, 0), 3)
+                for i, corner in enumerate(corners_int):
+                    cv2.circle(frame, tuple(corner), 8, (0, 255, 0), -1)
+                    cv2.putText(frame, str(i+1), (corner[0]+10, corner[1]), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
+                cv2.putText(frame, "BOARD DETECTED! Press SPACE to confirm", 
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            else:
+                cv2.putText(frame, f"Searching for board... (attempt {detection_attempts})", 
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            
+            cv2.putText(frame, "SPACE: confirm | D: debug | M: manual | Q: quit", 
+                       (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+            
+            if show_debug:
+                # Show detection process
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                debug_frame = self._get_debug_visualization(gray)
+                cv2.imshow('Debug - Detection Process', debug_frame)
             
             cv2.imshow('Calibration', frame)
             
             key = cv2.waitKey(1) & 0xFF
             if key == ord(' '):  # Space pressed
-                corners = self.detect_board_corners(frame)
                 if corners is not None:
                     self.board_corners = corners
                     self.calibrated = True
@@ -322,12 +461,17 @@ class MoveTrackingFENDetector:
                     if board_image is not None:
                         self.capture_baseline(board_image)
                     
-                    cv2.destroyWindow('Calibration')
+                    cv2.destroyAllWindows()
+                    print("✓ Automatic detection successful!")
                     return True
                 else:
-                    print("Could not detect board automatically. Try manual selection.")
+                    print("No board detected. Try adjusting lighting or position.")
+            elif key == ord('d'):
+                show_debug = not show_debug
+                if not show_debug:
+                    cv2.destroyWindow('Debug - Detection Process')
             elif key == ord('m'):
-                cv2.destroyWindow('Calibration')
+                cv2.destroyAllWindows()
                 corners = self.manual_corner_selection()
                 if corners is not None:
                     self.board_corners = corners
@@ -338,11 +482,54 @@ class MoveTrackingFENDetector:
                         board_image = self.get_board_perspective(frame, corners)
                         if board_image is not None:
                             self.capture_baseline(board_image)
+                    print("✓ Manual selection completed!")
                     return True
+                print("✗ Manual selection failed.")
                 return False
             elif key == ord('q'):
-                cv2.destroyWindow('Calibration')
+                cv2.destroyAllWindows()
                 return False
+    
+    def _get_debug_visualization(self, gray):
+        """Create a debug visualization showing the detection process."""
+        # Create a grid of debug images
+        h, w = gray.shape
+        debug_h, debug_w = h // 3, w // 3
+        
+        # Resize gray image
+        gray_small = cv2.resize(gray, (debug_w, debug_h))
+        
+        # Try adaptive threshold
+        blurred = cv2.GaussianBlur(gray, (7, 7), 0)
+        thresh_adaptive = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                              cv2.THRESH_BINARY, 11, 2)
+        thresh_adaptive_small = cv2.resize(thresh_adaptive, (debug_w, debug_h))
+        
+        # Try Canny
+        edges = cv2.Canny(blurred, 100, 200)
+        edges_small = cv2.resize(edges, (debug_w, debug_h))
+        
+        # Try Otsu
+        _, thresh_otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        thresh_otsu_small = cv2.resize(thresh_otsu, (debug_w, debug_h))
+        
+        # Create debug grid
+        debug_frame = np.zeros((debug_h * 2, debug_w * 2), dtype=np.uint8)
+        debug_frame[0:debug_h, 0:debug_w] = gray_small
+        debug_frame[0:debug_h, debug_w:debug_w*2] = thresh_adaptive_small
+        debug_frame[debug_h:debug_h*2, 0:debug_w] = edges_small
+        debug_frame[debug_h:debug_h*2, debug_w:debug_w*2] = thresh_otsu_small
+        
+        # Convert to color for labels
+        debug_frame = cv2.cvtColor(debug_frame, cv2.COLOR_GRAY2BGR)
+        
+        # Add labels
+        cv2.putText(debug_frame, "Original", (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(debug_frame, "Adaptive", (debug_w + 5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(debug_frame, "Canny", (5, debug_h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(debug_frame, "Otsu", (debug_w + 5, debug_h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
+        return debug_frame
     
     def run_move_tracking(self):
         """Main function for tracking moves and outputting FEN."""

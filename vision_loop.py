@@ -126,7 +126,7 @@ def generate_trash_talk(score: int) -> str:
         return "Are you playing blindfolded?"
 
 def detect_board_fen_from_frame(frame, corners):
-    temp_path = "temp_chess.jpg"
+    temp_path = "screenshots/annotated_board.jpg"
     cv2.imwrite(temp_path, frame)
     result = CLIENT.infer(temp_path, model_id=MODEL_ID)
     piece_map = {}

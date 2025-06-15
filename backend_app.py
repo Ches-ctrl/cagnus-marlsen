@@ -63,10 +63,16 @@ def control():
     if action == 'reset':
         detector._reset_position()
         return jsonify({'status': 'reset'})
-    elif action == 'calibrate':
-        detector.calibrate()
-        return jsonify({'status': 'calibrated'})
     return jsonify({'status': 'unknown action'})
+
+@app.route('/calibrate', methods=['POST'])
+def calibrate():
+    data = request.json
+    corners = data.get('corners')
+    if not corners or len(corners) != 4:
+        return jsonify({'status': 'error', 'message': 'You must provide 4 corners'}), 400
+    detector.set_board_corners(corners)
+    return jsonify({'status': 'calibrated'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, threaded=True)

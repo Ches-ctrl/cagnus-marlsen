@@ -23,6 +23,9 @@ CLIENT = InferenceHTTPClient(
     api_key=os.getenv("ROBOFLOW_API_KEY")
 )
 MODEL_ID = "chess-piece-detection-5ipnt/3"
+# MODEL_ID = "ctv/1"
+# MODEL_ID = "chess-pieces-wrdbb/3"
+# MODEL_ID = "chess-piece-detection-fyp/15"
 
 # --- Stockfish Setup ---
 STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"  # Adjust if needed
@@ -207,6 +210,13 @@ def save_game_pgn(move_history, game_result):
         print(game, file=f)
     print(f"Saved game PGN: {filename}")
 
+def is_legal_fen(fen):
+    try:
+        board = chess.Board(fen)
+        return board.is_valid()
+    except Exception:
+        return False
+
 def main():
     print("🧠 Cagnus Marlsen Vision Mode: Set up your board, then select the four corners.")
     cap = cv2.VideoCapture(0)
@@ -277,29 +287,22 @@ def main():
             print("No change detected. Try again.")
             continue
         try:
-            new_board = chess.Board(fen)
-            move = None
-            for m in board.legal_moves:
-                temp_board = board.copy()
-                temp_board.push(m)
-                if temp_board.board_fen() == new_board.board_fen():
-                    move = m
-                    break
-            if move is None:
-                print("Couldn't detect a valid move. Try again.")
-                continue
-            board.push(move)
-            move_history.append(move)
-            print(f"You played: {move}")
+            board = chess.Board(fen)  # Directly set the board to the new FEN
+            move_history.append(fen)  # Store FENs for record-keeping
+            print(f"Board updated to new FEN:")
             print(board)
             last_fen = fen
             # Save screenshot after user move
-            save_annotated_screenshot(frame, corners, f"user_{move}")
+            save_annotated_screenshot(frame, corners, f"user_update")
         except Exception as e:
             print(f"Error updating board: {e}")
             continue
         fen = board.fen()
-        reply_move, eval_info = get_best_move(fen)
+        try:
+            reply_move, eval_info = get_best_move(fen)
+        except Exception as e:
+            print(f"Stockfish crashed or could not analyze this position: {e}")
+            continue
         if reply_move is None:
             print("Engine resigns or no move found.")
             break

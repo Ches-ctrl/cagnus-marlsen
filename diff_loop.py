@@ -352,6 +352,49 @@ def fen_to_board_array(fen_board):
         board.append(board_row)
     return np.array(board)
 
+def sample_and_aggregate_board_state(cap, corners, baseline_stats, sample_count=5, sample_interval=0.2):
+    """Sample multiple frames and aggregate board state using majority vote per square."""
+    all_board_states = []
+    all_brightness = []
+    for _ in range(sample_count):
+        ret, frame = cap.read()
+        if not ret:
+            continue
+        warped = get_board_perspective(frame, corners)
+        squares = extract_squares_from_board(warped)
+        board_state = []
+        brightness_state = []
+        for row in range(8):
+            board_row = []
+            bright_row = []
+            for col in range(8):
+                piece = detect_piece_simple(squares[row][col], baseline_stats, row, col)
+                board_row.append(piece)
+                gray = cv2.cvtColor(squares[row][col], cv2.COLOR_BGR2GRAY)
+                bright_row.append(np.mean(gray))
+            board_state.append(board_row)
+            brightness_state.append(bright_row)
+        all_board_states.append(board_state)
+        all_brightness.append(brightness_state)
+        time.sleep(sample_interval)
+    # Aggregate by majority vote per square
+    agg_board = []
+    agg_brightness = []
+    for row in range(8):
+        agg_row = []
+        agg_bright_row = []
+        for col in range(8):
+            pieces = [all_board_states[i][row][col] for i in range(len(all_board_states))]
+            brights = [all_brightness[i][row][col] for i in range(len(all_brightness))]
+            # Majority vote for piece
+            piece = max(set(pieces), key=pieces.count)
+            agg_row.append(piece)
+            # Median brightness
+            agg_bright_row.append(np.median(brights))
+        agg_board.append(agg_row)
+        agg_brightness.append(agg_bright_row)
+    return np.array(agg_board), np.array(agg_brightness)
+
 def main():
     print("🧠 Cagnus Marlsen Vision Mode: Set up your board, then select the four corners.")
     cap = cv2.VideoCapture(0)
@@ -396,111 +439,113 @@ def main():
     save_annotated_screenshot(frame, corners, "init")
     board = chess.Board(starting_fen)
     last_fen = starting_fen
+    last_brightness = None
     move_history = []
-    while not board.is_game_over():
-        print("Waiting for your move... (update the board, then press SPACE)")
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                continue
-            for i, corner in enumerate(corners):
-                cv2.circle(frame, tuple(map(int, corner)), 8, (0, 255, 0), -1)
-                cv2.putText(frame, str(i+1), (int(corner[0])+10, int(corner[1])),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            cv2.imshow('Chess Vision', frame)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord(' '):
-                break
-            elif key == ord('q'):
-                cap.release()
-                cv2.destroyAllWindows()
-                return
-        warped = get_board_perspective(frame, corners)
-        squares = extract_squares_from_board(warped)
-        board_state = []
-        for row in range(8):
-            board_row = []
-            for col in range(8):
-                piece = detect_piece_simple(squares[row][col], baseline_stats, row, col)
-                board_row.append(piece)
-            board_state.append(board_row)
-        new_fen = board_array_to_fen(np.array(board_state))
-        print("Previous FEN:", last_fen)
-        print("Detected FEN:", new_fen)
-        # Print board arrays for visual diff
-        print("Previous board array:")
-        print(np.array(board.fen().split()[0].replace('/', '')))
-        print("New board array:")
-        print(np.array(new_fen.split()[0].replace('/', '')))
-        if new_fen == last_fen:
-            print("No change detected. Try again.")
-            continue
-        try:
-            new_board = chess.Board(new_fen)
-            move = None
-            print("Legal moves:", list(board.legal_moves))
-            for m in board.legal_moves:
-                temp_board = board.copy()
-                temp_board.push(m)
-                print(f"Trying move: {m}, board after move: {temp_board.board_fen()}")
-                if temp_board.board_fen() == new_board.board_fen():
-                    move = m
-                    print(f"Matched move: {move}")
-                    break
-            if move is None:
-                print("Couldn't detect a valid move. Try again.")
-                continue
-            board.push(move)
-            move_history.append(move)
-            print(f"You played: {move}")
-            print(board)
-            last_fen = new_fen
-            save_annotated_screenshot(frame, corners, f"user_{move}")
-            # --- AI move suggestion ---
-            fen = board.fen()
-            reply_move, eval_info = get_best_move(fen)
-            if reply_move is None:
-                print("Engine resigns or no move found.")
-                break
-            print(f"🤖 My move: {reply_move} | Eval: {eval_info}")
-            score = eval_info.get("value", 0)
-            smack = generate_trash_talk(score)
-            print(f"🗯️  {smack}")
-            speak_text(f"My move is {reply_move}. {smack}")
-            print("Please make my move on the board, then press SPACE to continue.")
-            # Wait for user to make the AI's move and press SPACE
-            while True:
-                ret, frame = cap.read()
-                if not ret:
+    print("\nSampling and monitoring board state. Press 'q' to quit.")
+    try:
+        while not board.is_game_over():
+            # Sample and aggregate board state every 2 seconds
+            agg_board, agg_brightness = sample_and_aggregate_board_state(cap, corners, baseline_stats, sample_count=5, sample_interval=0.2)
+            new_fen = board_array_to_fen(agg_board)
+            print(f"[INFO] Aggregated FEN: {new_fen}")
+            # Print board array for visual diff
+            print("Current board array:")
+            print(np.array(new_fen.split()[0].replace('/', '')))
+            # Visualize the board using chess.Board
+            try:
+                print("[INFO] Visualized board:")
+                print(chess.Board(new_fen))
+            except Exception as e:
+                print(f"[ERROR] Could not visualize board: {e}")
+            # Detect change by FEN and brightness
+            if new_fen != last_fen:
+                # Find changed squares by brightness
+                changed_squares = []
+                if last_brightness is not None:
+                    for row in range(8):
+                        for col in range(8):
+                            bright_diff = abs(agg_brightness[row][col] - last_brightness[row][col])
+                            if bright_diff > 20:  # Threshold for significant change
+                                changed_squares.append((row, col, bright_diff))
+                print(f"[CHANGE DETECTED] Changed squares (row, col, brightness diff): {changed_squares}")
+                try:
+                    new_board = chess.Board(new_fen)
+                    move = None
+                    for m in board.legal_moves:
+                        temp_board = board.copy()
+                        temp_board.push(m)
+                        if temp_board.board_fen() == new_board.board_fen():
+                            move = m
+                            break
+                    if move is None:
+                        print("Couldn't detect a valid move. Waiting for next sample...")
+                        last_fen = new_fen
+                        last_brightness = agg_brightness
+                        continue
+                    board.push(move)
+                    move_history.append(move)
+                    print(f"[MOVE] You played: {move}")
+                    print(board)
+                    last_fen = new_fen
+                    last_brightness = agg_brightness
+                    save_annotated_screenshot(frame, corners, f"user_{move}")
+                    # --- AI move suggestion ---
+                    fen = board.fen()
+                    reply_move, eval_info = get_best_move(fen)
+                    if reply_move is None:
+                        print("Engine resigns or no move found.")
+                        break
+                    print(f"🤖 My move: {reply_move} | Eval: {eval_info}")
+                    score = eval_info.get("value", 0)
+                    smack = generate_trash_talk(score)
+                    print(f"🗯️  {smack}")
+                    speak_text(f"My move is {reply_move}. {smack}")
+                    print("Please make my move on the board, then press SPACE to continue.")
+                    # Wait for user to make the AI's move and press SPACE
+                    while True:
+                        ret, frame = cap.read()
+                        if not ret:
+                            continue
+                        for i, corner in enumerate(corners):
+                            cv2.circle(frame, tuple(map(int, corner)), 8, (0, 255, 0), -1)
+                            cv2.putText(frame, str(i+1), (int(corner[0])+10, int(corner[1])),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        cv2.imshow('Chess Vision', frame)
+                        key = cv2.waitKey(1) & 0xFF
+                        if key == ord(' '):
+                            break
+                        elif key == ord('q'):
+                            cap.release()
+                            cv2.destroyAllWindows()
+                            return
+                    # After user confirms, update the board state for the AI's move
+                    board.push(chess.Move.from_uci(reply_move))
+                    move_history.append(chess.Move.from_uci(reply_move))
+                    ret, frame = cap.read()
+                    if ret:
+                        save_annotated_screenshot(frame, corners, f"engine_{reply_move}")
+                    last_fen = board.fen()
+                    last_brightness = agg_brightness
+                except Exception as e:
+                    print(f"Error updating board: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    last_fen = new_fen
+                    last_brightness = agg_brightness
                     continue
-                for i, corner in enumerate(corners):
-                    cv2.circle(frame, tuple(map(int, corner)), 8, (0, 255, 0), -1)
-                    cv2.putText(frame, str(i+1), (int(corner[0])+10, int(corner[1])),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                cv2.imshow('Chess Vision', frame)
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord(' '):
-                    break
-                elif key == ord('q'):
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    return
-            # After user confirms, update the board state for the AI's move
-            board.push(chess.Move.from_uci(reply_move))
-            move_history.append(chess.Move.from_uci(reply_move))
-            ret, frame = cap.read()
-            if ret:
-                save_annotated_screenshot(frame, corners, f"engine_{reply_move}")
-            last_fen = board.fen()
-        except Exception as e:
-            print(f"Error updating board: {e}")
-            import traceback
-            traceback.print_exc()
-            continue
-    print("\n🏁 Game Over:", board.result())
-    save_game_pgn(move_history, board.result())
-    cap.release()
-    cv2.destroyAllWindows()
+            else:
+                print("[NO CHANGE] No move detected. Waiting for next sample...")
+                last_brightness = agg_brightness
+            # Allow user to quit
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        print("\n🏁 Game Over:", board.result())
+    finally:
+        # Always save the game, even if not completed
+        result = board.result() if board.is_game_over() else "*"
+        save_game_pgn(move_history, result)
+        cap.release()
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()

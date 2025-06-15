@@ -74,5 +74,10 @@ def calibrate():
     detector.set_board_corners(corners)
     return jsonify({'status': 'calibrated'})
 
+@app.route('/force_start', methods=['POST'])
+def force_start():
+    detector.force_start_game()
+    return jsonify({'status': 'force_started'})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, threaded=True)

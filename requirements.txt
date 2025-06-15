@@ -8,3 +8,4 @@ inference
 numpy
 langgraph
 openai
+Flask

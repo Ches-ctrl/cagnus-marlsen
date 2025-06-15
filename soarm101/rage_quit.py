@@ -3,10 +3,10 @@
 """
 Simple Robotic Arm Sweep Script
 
-Executes a simple sequence:
+Executes a fast sequence with pauses:
 1. Home position
-2. Position 1 
-3. Position 2
+2. Position 1 (FAST) → pause 2 seconds
+3. Position 2 (FAST) → pause 2 seconds  
 4. Home position
 
 Usage: python sweep.py square_mapping_improved.json
@@ -31,8 +31,8 @@ class SimpleSweeper:
         self.home_position = {}
         
         # Movement settings
-        self.movement_duration = 3.0
-        self.pause_duration = 1.0
+        self.movement_duration = 0.8  # Fast movements
+        self.pause_duration = 2.0     # 2 second pauses
         
         # Hardcoded positions from images
         self.position_1 = {
@@ -113,26 +113,28 @@ class SimpleSweeper:
             time.sleep(step_delay)
         
         print("✅ Reached!")
+        if description != "Returning to HOME":
+            print(f"⏸️  Pausing for {self.pause_duration} seconds...")
         time.sleep(self.pause_duration)
     
     def run_sweep(self):
         """Execute the complete sweep sequence."""
-        print("\n🌊 Starting Sweep Sequence")
-        print("=" * 30)
+        print("\n🌊 Starting Fast Sweep Sequence")
+        print("=" * 35)
         
         # Step 1: Home
         self.move_to_position(self.home_position, "Moving to HOME")
         
-        # Step 2: Position 1  
-        self.move_to_position(self.position_1, "Moving to POSITION 1")
+        # Step 2: Position 1 (fast + pause)
+        self.move_to_position(self.position_1, "Moving FAST to POSITION 1")
         
-        # Step 3: Position 2
-        self.move_to_position(self.position_2, "Moving to POSITION 2")
+        # Step 3: Position 2 (fast + pause)
+        self.move_to_position(self.position_2, "Moving FAST to POSITION 2")
         
-        # Step 4: Home
+        # Step 4: Home (no pause)
         self.move_to_position(self.home_position, "Returning to HOME")
         
-        print("\n✅ Sweep completed!")
+        print("\n✅ Fast sweep completed!")
 
 
 def main():

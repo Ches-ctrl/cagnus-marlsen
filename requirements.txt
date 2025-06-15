@@ -1,0 +1,11 @@
+stockfish
+python-chess
+elevenlabs
+python-dotenv
+opencv-python
+roboflow
+inference
+numpy
+langgraph
+openai
+Flask

@@ -12,7 +12,7 @@ elevenlabs = ElevenLabs(
 def speak_text(text: str):
     audio = elevenlabs.text_to_speech.convert(
         text=text,
-        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        voice_id="6XVxc5pFxXre3breYJhP", # Norwegian accent
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
     )

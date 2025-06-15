@@ -30,14 +30,14 @@
     "description": "IMPROVED chessboard positions using manually calibrated anchor points",
     "generated_at": "2025-06-15T11:41:47.179826",
     "home_position": {
-      "elbow_flex.pos": -11.27,
-      "gripper.pos": 1.12,
-      "shoulder_lift.pos": -53.28,
-      "shoulder_pan.pos": -4.59,
-      "wrist_flex.pos": 17.10,
-      "wrist_roll.pos": -2.65
+      "elbow_flex.pos": -10.167193854496162,
+      "gripper.pos": 1.6930638995084655,
+      "shoulder_lift.pos": -54.93075954678976,
+      "shoulder_pan.pos": -5.102420856610806,
+      "wrist_flex.pos": 18.185708172871202,
+      "wrist_roll.pos": -0.31645569620253866
     },
-    "home_recorded_at": "2025-06-15T12:14:32.014301",
+    "home_recorded_at": "2025-06-15T14:21:04.625302",
     "improved_at": "2025-06-15T11:56:33.798264",
     "improvement_method": "Weighted distance interpolation from manually calibrated squares",
     "improvement_notes": [
@@ -53,7 +53,7 @@
       "Fallback method: Bilinear interpolation from corners",
       "All calibrated squares preserved exactly"
     ],
-    "last_calibrated": "2025-06-15T12:18:01.466460",
+    "last_calibrated": "2025-06-15T14:35:54.735414",
     "last_improved": "2025-06-15T12:24:39.921967",
     "manually_calibrated_squares": [
       "e4",
@@ -66,7 +66,19 @@
       "h7",
       "e7",
       "c7",
-      "a1"
+      "a1",
+      "f1",
+      "c1",
+      "h4",
+      "f4",
+      "c4",
+      "a4",
+      "h6",
+      "f6",
+      "c6",
+      "a6",
+      "d7",
+      "a7"
     ],
     "position_type": "Square centers for piece placement",
     "total_squares": 64,
@@ -74,10 +86,10 @@
   },
   "positions": {
     "a1": {
-      "elbow_flex.pos": -56.44,
+      "elbow_flex.pos": -64.94,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 58.12,
-      "shoulder_pan.pos": 9.07,
+      "shoulder_lift.pos": 61.62,
+      "shoulder_pan.pos": 11.57,
       "wrist_flex.pos": 48.05,
       "wrist_roll.pos": -1.95
     },
@@ -98,10 +110,10 @@
       "wrist_roll.pos": -1.97
     },
     "a4": {
-      "elbow_flex.pos": 16.92,
+      "elbow_flex.pos": -1.58,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 6.92,
-      "shoulder_pan.pos": 1.15,
+      "shoulder_lift.pos": 18.92,
+      "shoulder_pan.pos": 16.65,
       "wrist_flex.pos": 51.18,
       "wrist_roll.pos": -1.97
     },
@@ -114,19 +126,19 @@
       "wrist_roll.pos": -1.98
     },
     "a6": {
-      "elbow_flex.pos": 38.71,
+      "elbow_flex.pos": 38.21,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -9.8,
-      "shoulder_pan.pos": 7.58,
-      "wrist_flex.pos": 50.14,
+      "shoulder_lift.pos": -7.3,
+      "shoulder_pan.pos": 22.58,
+      "wrist_flex.pos": 47.14,
       "wrist_roll.pos": -1.98
     },
     "a7": {
-      "elbow_flex.pos": 52.86,
+      "elbow_flex.pos": 46.86,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -22.5,
-      "shoulder_pan.pos": 19.28,
-      "wrist_flex.pos": 47.3,
+      "shoulder_lift.pos": -17.5,
+      "shoulder_pan.pos": 26.78,
+      "wrist_flex.pos": 49.3,
       "wrist_roll.pos": -1.99
     },
     "a8": {
@@ -202,10 +214,10 @@
       "wrist_roll.pos": -1.99
     },
     "c1": {
-      "elbow_flex.pos": -11.04,
+      "elbow_flex.pos": -42.54,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 26.98,
-      "shoulder_pan.pos": -1.41,
+      "shoulder_lift.pos": 47.98,
+      "shoulder_pan.pos": 2.59,
       "wrist_flex.pos": 48.44,
       "wrist_roll.pos": -1.97
     },
@@ -226,10 +238,10 @@
       "wrist_roll.pos": -1.97
     },
     "c4": {
-      "elbow_flex.pos": 19.01,
+      "elbow_flex.pos": 9.01,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 6.26,
-      "shoulder_pan.pos": -0.43,
+      "shoulder_lift.pos": 10.76,
+      "shoulder_pan.pos": -2.43,
       "wrist_flex.pos": 54.41,
       "wrist_roll.pos": -1.98
     },
@@ -242,10 +254,10 @@
       "wrist_roll.pos": -1.98
     },
     "c6": {
-      "elbow_flex.pos": 35.86,
+      "elbow_flex.pos": 40.36,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -6.02,
-      "shoulder_pan.pos": 2.95,
+      "shoulder_lift.pos": -10.52,
+      "shoulder_pan.pos": 7.95,
       "wrist_flex.pos": 53.27,
       "wrist_roll.pos": -1.98
     },
@@ -317,8 +329,8 @@
       "elbow_flex.pos": 49.08,
       "gripper.pos": 0.93,
       "shoulder_lift.pos": -15.55,
-      "shoulder_pan.pos": -2.78,
-      "wrist_flex.pos": 49.96,
+      "shoulder_pan.pos": -0.78,
+      "wrist_flex.pos": 60.96,
       "wrist_roll.pos": -1.97
     },
     "d8": {
@@ -378,11 +390,11 @@
       "wrist_roll.pos": -1.97
     },
     "e7": {
-      "elbow_flex.pos": 61.09,
+      "elbow_flex.pos": 53.59,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -25.27,
-      "shoulder_pan.pos": -9.55,
-      "wrist_flex.pos": 48.18,
+      "shoulder_lift.pos": -21.27,
+      "shoulder_pan.pos": -12.05,
+      "wrist_flex.pos": 55.18,
       "wrist_roll.pos": -1.97
     },
     "e8": {
@@ -394,10 +406,10 @@
       "wrist_roll.pos": -1.97
     },
     "f1": {
-      "elbow_flex.pos": -8.86,
+      "elbow_flex.pos": -43.86,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 25.78,
-      "shoulder_pan.pos": -15.0,
+      "shoulder_lift.pos": 49.28,
+      "shoulder_pan.pos": -11.5,
       "wrist_flex.pos": 46.48,
       "wrist_roll.pos": -1.98
     },
@@ -418,10 +430,10 @@
       "wrist_roll.pos": -1.98
     },
     "f4": {
-      "elbow_flex.pos": 21.15,
+      "elbow_flex.pos": 14.65,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 6.74,
-      "shoulder_pan.pos": -12.52,
+      "shoulder_lift.pos": 10.74,
+      "shoulder_pan.pos": -14.52,
       "wrist_flex.pos": 46.52,
       "wrist_roll.pos": -1.98
     },
@@ -434,10 +446,10 @@
       "wrist_roll.pos": -1.97
     },
     "f6": {
-      "elbow_flex.pos": 40.97,
+      "elbow_flex.pos": 45.47,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -8.89,
-      "shoulder_pan.pos": -14.23,
+      "shoulder_lift.pos": -14.39,
+      "shoulder_pan.pos": -20.23,
       "wrist_flex.pos": 48.5,
       "wrist_roll.pos": -1.97
     },
@@ -525,7 +537,7 @@
       "elbow_flex.pos": -56.44,
       "gripper.pos": 0.93,
       "shoulder_lift.pos": 58.04,
-      "shoulder_pan.pos": -22.16,
+      "shoulder_pan.pos": -20.66,
       "wrist_flex.pos": 44.97,
       "wrist_roll.pos": -2.0
     },
@@ -546,10 +558,10 @@
       "wrist_roll.pos": -1.98
     },
     "h4": {
-      "elbow_flex.pos": 21.22,
+      "elbow_flex.pos": 3.72,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": 7.27,
-      "shoulder_pan.pos": -25.38,
+      "shoulder_lift.pos": 18.27,
+      "shoulder_pan.pos": -26.38,
       "wrist_flex.pos": 44.19,
       "wrist_roll.pos": -1.97
     },
@@ -565,8 +577,8 @@
       "elbow_flex.pos": 36.5,
       "gripper.pos": 0.93,
       "shoulder_lift.pos": -5.98,
-      "shoulder_pan.pos": -31.37,
-      "wrist_flex.pos": 42.77,
+      "shoulder_pan.pos": -33.37,
+      "wrist_flex.pos": 44.27,
       "wrist_roll.pos": -1.97
     },
     "h7": {
@@ -580,9 +592,9 @@
     "h8": {
       "elbow_flex.pos": 62.42,
       "gripper.pos": 0.93,
-      "shoulder_lift.pos": -27.48,
-      "shoulder_pan.pos": -46.35,
-      "wrist_flex.pos": 39.24,
+      "shoulder_lift.pos": -25.98,
+      "shoulder_pan.pos": -44.35,
+      "wrist_flex.pos": 43.24,
       "wrist_roll.pos": -1.95
     }
   }

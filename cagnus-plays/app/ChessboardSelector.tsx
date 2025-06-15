@@ -7,6 +7,7 @@ export default function ChessboardSelector() {
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [corners, setCorners] = useState<{ x: number; y: number }[]>([]);
+  const [dimensions, setDimensions] = useState({ width: 1280, height: 720 }); // Default, will update on image load
 
   // Draw markers on canvas
   useEffect(() => {
@@ -18,14 +19,14 @@ export default function ChessboardSelector() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       corners.forEach((corner, i) => {
         ctx.beginPath();
-        ctx.arc(corner.x, corner.y, 8, 0, 2 * Math.PI);
+        ctx.arc(corner.x, corner.y, 16, 0, 2 * Math.PI); // Larger marker
         ctx.fillStyle = "red";
         ctx.fill();
-        ctx.font = "16px Arial";
-        ctx.fillText(`${i + 1}`, corner.x + 10, corner.y - 10);
+        ctx.font = "32px Arial";
+        ctx.fillText(`${i + 1}`, corner.x + 20, corner.y - 20);
       });
     }
-  }, [corners]);
+  }, [corners, dimensions]);
 
   // Handle click
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -53,31 +54,40 @@ export default function ChessboardSelector() {
   // Reset selection
   const resetCorners = () => setCorners([]);
 
+  // On image load, update dimensions
+  const handleImgLoad = () => {
+    if (imgRef.current) {
+      setDimensions({
+        width: imgRef.current.naturalWidth,
+        height: imgRef.current.naturalHeight,
+      });
+      if (canvasRef.current) {
+        canvasRef.current.width = imgRef.current.naturalWidth;
+        canvasRef.current.height = imgRef.current.naturalHeight;
+      }
+    }
+  };
+
   return (
-    <div style={{ position: "relative", width: 480 }}>
+    <div style={{ position: "relative", width: "100%", height: "auto" }}>
       <img
         ref={imgRef}
         src={VIDEO_URL}
         alt="Live Chessboard"
-        style={{ width: 480, display: "block" }}
-        onLoad={() => {
-          if (canvasRef.current && imgRef.current) {
-            canvasRef.current.width = imgRef.current.width;
-            canvasRef.current.height = imgRef.current.height;
-          }
-        }}
+        style={{ width: "100%", height: "auto", display: "block" }}
+        onLoad={handleImgLoad}
       />
       <canvas
         ref={canvasRef}
-        width={480}
-        height={360}
+        width={dimensions.width}
+        height={dimensions.height}
         style={{
           position: "absolute",
           left: 0,
           top: 0,
+          width: "100%",
+          height: "100%",
           pointerEvents: "auto",
-          width: 480,
-          height: 360,
         }}
         onClick={handleCanvasClick}
       />

@@ -8,3 +8,5 @@ inference
 numpy
 langgraph
 openai
+Flask
+flask-cors

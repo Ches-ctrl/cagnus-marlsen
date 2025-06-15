@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_cors import CORS
 import cv2
 
@@ -7,6 +7,9 @@ CORS(app)
 
 # Camera index (change if needed)
 CAMERA_INDEX = 0
+
+# Store corners globally for now
+corners = []
 
 def gen_frames():
     cap = cv2.VideoCapture(CAMERA_INDEX)
@@ -25,6 +28,14 @@ def gen_frames():
 def video_feed():
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/set_corners', methods=['POST'])
+def set_corners():
+    global corners
+    data = request.get_json()
+    corners = data.get('corners', [])
+    print('Received corners:', corners)
+    return {'status': 'ok'}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
